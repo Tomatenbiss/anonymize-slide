@@ -35,6 +35,7 @@ from io import StringIO
 from glob import glob
 from optparse import OptionParser
 import os
+import re
 # import string
 import struct
 import subprocess
@@ -330,8 +331,10 @@ class MrxsFile(object):
 
         # Parse slidedat
         self._slidedatfile = os.path.join(dirname, 'Slidedat.ini')
+        self._slidedatfile_upperdir = os.path.join(dirname, '../Slidedat.ini')
         self._dat = RawConfigParser()
         self._dat.optionxform = str
+        self._anonymize_meta(dirname)
         try:
             with open(self._slidedatfile, 'r', encoding="utf-8-sig") as fh:
                 self._have_bom = (fh.read(len(UTF8_BOM)) == UTF8_BOM)
@@ -350,6 +353,20 @@ class MrxsFile(object):
 
         # Build levels
         self._make_levels()
+
+    def _anonymize_meta(self, dirname):
+        for filename in [os.path.join(dirname, 'Slidedat.ini'), os.path.join(dirname, '../Slidedat.ini')]:
+            filedata = ''
+            with open(filename, 'r') as fh:
+                filedata = fh.read()
+                filedata = re.sub(r"SLIDE_NAME.*", "SLIDE_NAME = None", filedata)
+                filedata = re.sub(r"PROJECT_NAME.*", "PROJECT_NAME = None", filedata)
+                filedata = re.sub(r"SLIDE_CREATIONDATETIME.*", "SLIDE_CREATIONDATETIME = None", filedata)
+                fh.close
+
+            with open(filename, 'w') as fh:
+                fh.write(filedata)
+                fh.close()
 
     def _make_levels(self):
         self._levels = {}
