@@ -668,10 +668,10 @@ def do_ventana_tif(filename):
 
 
 format_handlers = [
-    do_ventana_tif,
-    do_aperio_svs,
-    do_hamamatsu_ndpi,
     do_3dhistech_mrxs,
+    do_hamamatsu_ndpi,
+    do_aperio_svs,
+    do_ventana_tif,
 ]
 
 def anonymize_slide(filename):
