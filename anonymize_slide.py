@@ -250,6 +250,8 @@ class TiffEntry(object):
             item_fmt = 'f'
         elif self.type == DOUBLE:
             item_fmt = 'd'
+        elif self.type == 7:
+            item_fmt = 'c'
         else:
             raise ValueError('Unsupported type')
         return item_fmt
@@ -357,16 +359,17 @@ class MrxsFile(object):
     def _anonymize_meta(self, dirname):
         for filename in [os.path.join(dirname, 'Slidedat.ini'), os.path.join(dirname, '../Slidedat.ini')]:
             filedata = ''
-            with open(filename, 'r') as fh:
-                filedata = fh.read()
-                filedata = re.sub(r"SLIDE_NAME.*", "SLIDE_NAME = None", filedata)
-                filedata = re.sub(r"PROJECT_NAME.*", "PROJECT_NAME = None", filedata)
-                filedata = re.sub(r"SLIDE_CREATIONDATETIME.*", "SLIDE_CREATIONDATETIME = None", filedata)
-                fh.close
+            if os.path.exists(filename):
+                with open(filename, 'r') as fh:
+                    filedata = fh.read()
+                    filedata = re.sub(r"SLIDE_NAME.*", "SLIDE_NAME = None", filedata)
+                    filedata = re.sub(r"PROJECT_NAME.*", "PROJECT_NAME = None", filedata)
+                    filedata = re.sub(r"SLIDE_CREATIONDATETIME.*", "SLIDE_CREATIONDATETIME = None", filedata)
+                    fh.close
 
-            with open(filename, 'w') as fh:
-                fh.write(filedata)
-                fh.close()
+                with open(filename, 'w') as fh:
+                    fh.write(filedata)
+                    fh.close()
 
     def _make_levels(self):
         self._levels = {}
@@ -572,6 +575,9 @@ def accept(filename, format):
 
 # TODO remove Filename from ImageDescription tags.
 def do_aperio_svs(filename):
+
+    
+
     def cleanse_filename(filename_block):
         key, val = filename_block.split(" = ")
         val = "X"
@@ -586,15 +592,24 @@ def do_aperio_svs(filename):
             if not desc0.startswith(b'Aperio'):
                 raise UnrecognizedFile
         except KeyError:
-            raise UnrecognizedFile
+            raise UnrecognizedFile  
         accept(filename, 'SVS')
 
     # Strip label
     with TiffFile(filename) as fh:
         # Find and delete label
         for directory in fh.directories:
+            
+            # for key in directory.entries.keys():
+            #     print('ENTRY: ', directory.entries[key].value()[:10])
+            
             lines = directory.entries[IMAGE_DESCRIPTION].value().splitlines()
-            if len(lines) >= 2 and lines[1].startswith(b'label '):
+            if lines[0].startswith(b'Aperio'):
+                
+                if lines[1].find(b"Q=100") > -1:
+                    directory.delete()
+
+            elif len(lines) >= 2 and lines[1].startswith(b'label '):
                 # directory.delete(expected_prefix=LZW_CLEARCODE)
                 directory.delete()
                 print("Deleted label.")
