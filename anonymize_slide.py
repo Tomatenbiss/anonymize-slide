@@ -599,17 +599,8 @@ def do_aperio_svs(filename):
     with TiffFile(filename) as fh:
         # Find and delete label
         for directory in fh.directories:
-            
-            # for key in directory.entries.keys():
-            #     print('ENTRY: ', directory.entries[key].value()[:10])
-            
             lines = directory.entries[IMAGE_DESCRIPTION].value().splitlines()
-            if lines[0].startswith(b'Aperio'):
-                
-                if lines[1].find(b"Q=100") > -1:
-                    directory.delete()
-
-            elif len(lines) >= 2 and lines[1].startswith(b'label '):
+            if len(lines) >= 2 and lines[1].startswith(b'label '):
                 # directory.delete(expected_prefix=LZW_CLEARCODE)
                 directory.delete()
                 print("Deleted label.")
